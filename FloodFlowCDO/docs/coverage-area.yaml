@@ -1,0 +1,189 @@
+/coverage-areas:
+    get:
+      tags: [Coverage Areas]
+      summary: List coverage areas
+      description: Any logged-in user can read. Inactive areas are hidden unless `include_inactive=true` (admin only).
+      operationId: listCoverageAreas
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: district
+          in: query
+          description: Only areas in this district.
+          schema:
+            $ref: '#/components/schemas/District'
+        - name: is_coastal_riverfront
+          in: query
+          description: Only coastal/riverfront zones when true.
+          schema:
+            type: boolean
+        - name: include_inactive
+          in: query
+          description: Include inactive areas. Ignored for commuters.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: A page of coverage areas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CoverageArea'
+              example:
+                - id: 1
+                  name: Carmen
+                  barangay: Carmen
+                  city: Cagayan de Oro
+                  district: first_district
+                  is_coastal_riverfront: true
+                  description: Low-lying area near the Cagayan River.
+                  is_active: true
+                  created_at: '2026-11-01T08:00:00Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Coverage Areas]
+      summary: Create a coverage area (admin)
+      description: >-
+        Only flood-prone barangays listed in the API scope (see `info.description`) should be added.
+        The same barangay cannot be added twice (409).
+      operationId: createCoverageArea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoverageAreaInput'
+            example:
+              name: Carmen
+              barangay: Carmen
+              city: Cagayan de Oro
+              district: first_district
+              is_coastal_riverfront: true
+              description: Low-lying area near the Cagayan River.
+              is_active: true
+      responses:
+        '201':
+          description: Coverage area created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageArea'
+              example:
+                id: 1
+                name: Carmen
+                barangay: Carmen
+                city: Cagayan de Oro
+                district: first_district
+                is_coastal_riverfront: true
+                description: Low-lying area near the Cagayan River.
+                is_active: true
+                created_at: '2026-11-01T08:00:00Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /coverage-areas/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Coverage Areas]
+      summary: Get a coverage area by id
+      operationId: getCoverageArea
+      responses:
+        '200':
+          description: The coverage area.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageArea'
+              example:
+                id: 1
+                name: Carmen
+                barangay: Carmen
+                city: Cagayan de Oro
+                district: first_district
+                is_coastal_riverfront: true
+                description: Low-lying area near the Cagayan River.
+                is_active: true
+                created_at: '2026-11-01T08:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Coverage Areas]
+      summary: Replace a coverage area (admin)
+      description: >-
+        Full update. Setting `is_active` to false hides the area from commuters but keeps its streets,
+        reports and advisories.
+      operationId: updateCoverageArea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoverageAreaInput'
+            example:
+              name: Carmen
+              barangay: Carmen
+              city: Cagayan de Oro
+              district: first_district
+              is_coastal_riverfront: true
+              description: Updated description.
+              is_active: true
+      responses:
+        '200':
+          description: Coverage area updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageArea'
+              example:
+                id: 1
+                name: Carmen
+                barangay: Carmen
+                city: Cagayan de Oro
+                district: first_district
+                is_coastal_riverfront: true
+                description: Updated description.
+                is_active: true
+                created_at: '2026-11-01T08:00:00Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Coverage Areas]
+      summary: Delete a coverage area (admin)
+      description: >-
+        Returns 409 if any street still belongs to the area (deactivate it with PUT instead).
+        If only users or advisories reference it, their `coverage_area_id` is set to `null`
+        (advisories with `null` are city-wide).
+      operationId: deleteCoverageArea
+      responses:
+        '204':
+          description: Coverage area deleted. No body.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
